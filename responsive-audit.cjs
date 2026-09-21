@@ -1,6 +1,8 @@
 const puppeteer = require('puppeteer')
+const path = require('path')
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
-const OUT = '/home/user/labcare/screenshots'
+// Relative to this script, so the audit works on any machine.
+const OUT = path.join(__dirname, 'screenshots')
 const results = []
 const log = (n, ok, x='') => { results.push({n, ok}); console.log(`${ok?'PASS':'FAIL'}  ${n}${x?` — ${x}`:''}`) }
 

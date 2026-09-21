@@ -1,7 +1,9 @@
 const puppeteer = require('puppeteer')
 const fs = require('fs')
+const path = require('path')
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
-const OUT = '/home/user/labcare/screenshots'
+// Relative to this script, so screenshots land in the project on any machine.
+const OUT = path.join(__dirname, 'screenshots')
 
 ;(async () => {
   fs.mkdirSync(OUT, { recursive: true })
