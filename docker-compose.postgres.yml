@@ -1,0 +1,59 @@
+# LabCare Diagnostics — optional PostgreSQL overlay
+#
+# The current demo stores everything in the browser and needs NO database. This file
+# is the starting point for the production backend described in
+# README → "Recommended Production Stack": it is kept separate so the base stack
+# (`docker compose up`) never depends on it and never fails for a missing credential.
+#
+# Usage:
+#   cp .env.example .env          # then set POSTGRES_* to real values
+#   docker compose -f docker-compose.yml -f docker-compose.postgres.yml up -d
+#
+#   docker compose -f docker-compose.yml -f docker-compose.postgres.yml logs -f postgres
+#   docker compose -f docker-compose.yml -f docker-compose.postgres.yml down      # keeps data
+#   docker compose -f docker-compose.yml -f docker-compose.postgres.yml down -v   # deletes data
+#
+# Credentials are REQUIRED and have no defaults — a database must never start with a
+# guessable password. If they are missing, Compose fails immediately with a clear
+# message instead of silently creating a weak database.
+
+name: labcare
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: labcare-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env — never use a default}
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
+      # Predictable data directory inside the mounted volume.
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      # Named volume → data survives `down`, rebuilds and image upgrades.
+      - labcare_pgdata:/var/lib/postgresql/data
+    # Deliberately NOT published to the host: services on this Compose network reach
+    # it by name (`postgres:5432`). Exposing a database publicly is a common and
+    # avoidable production mistake. For local tooling, uncomment the loopback-only
+    # bind below — it binds to 127.0.0.1, not to every interface.
+    # ports:
+    #   - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      start_period: 10s
+      retries: 5
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# A future backend API service would slot in here as its own overlay file, connecting
+# to `postgres:5432` and running migrations before the web container is released.
+
+volumes:
+  labcare_pgdata:
+    name: labcare_pgdata

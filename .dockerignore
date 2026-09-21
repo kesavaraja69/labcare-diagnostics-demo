@@ -1,0 +1,48 @@
+# Static SPA build output and everything not needed inside the image context.
+
+# Dependencies (reinstalled in the image with `npm ci`)
+node_modules
+**/node_modules
+
+# Build output
+dist
+build
+
+# VCS / editor / OS noise
+.git
+.gitignore
+.gitattributes
+.vscode
+.idea
+*.swp
+.DS_Store
+
+# Environment & secrets — never bake these into an image layer
+.env
+.env.*
+!.env.example
+
+# Local development & QA artefacts that are not part of the app
+screenshots
+coverage
+*.log
+npm-debug.log*
+.eslintcache
+.vite
+
+# Test / automation scripts (browser-driven, run against a live server)
+e2e-test.cjs
+responsive-audit.cjs
+dialog-test.cjs
+screenshots.cjs
+dialog-probe.cjs
+
+# Documentation (kept in the repo, not needed in the image)
+docs
+README.md
+
+# Docker files themselves
+Dockerfile
+docker-compose.yml
+docker-compose.*.yml
+.dockerignore
