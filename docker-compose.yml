@@ -2,7 +2,7 @@
 #
 # Serves the production build. One service, zero required configuration:
 #
-#   docker compose up -d --build      # → http://localhost:8080
+#   docker compose up -d --build      # → http://localhost:8585
 #
 # Optional services live in overlay files and are only parsed when you include them,
 # so they can never break a plain `docker compose up`:
@@ -32,7 +32,7 @@ services:
     container_name: labcare-web
     ports:
       # host:container — nginx-unprivileged listens on 8080 inside the container
-      - "${APP_PORT:-8080}:8080"
+      - "${APP_PORT:-8585}:8080"
     environment:
       NODE_ENV: production
     restart: unless-stopped

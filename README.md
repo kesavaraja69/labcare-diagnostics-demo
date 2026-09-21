@@ -65,7 +65,7 @@ cp .env.example .env
 docker build -t labcare-diagnostics:local .
 
 # 3. Run it
-docker run --rm -p 8080:8080 labcare-diagnostics:local   # → http://localhost:8080
+docker run --rm -p 8585:8080 labcare-diagnostics:local   # → http://localhost:8585
 
 # --- or with Docker Compose ---
 docker compose up -d --build         # start (build if needed)
