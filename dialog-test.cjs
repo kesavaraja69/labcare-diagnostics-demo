@@ -17,6 +17,10 @@
 const puppeteer = require('puppeteer')
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
+// Target server. Defaults to the Vite dev server; override it to test another
+// build, e.g. the Docker container:  BASE_URL=http://localhost:8090 node dialog-test.cjs
+const BASE = (process.env.BASE_URL || 'http://localhost:5173').replace(/\/+$/, '')
+
 const results = []
 const log = (name, ok, detail = '') => {
   results.push({ name, ok })
@@ -161,7 +165,7 @@ async function assertCentredWhileScrolled(page, name) {
     await page.setViewport({ width: vw, height: vw === 390 ? 844 : vw === 768 ? 1024 : 900 })
 
     // 1. Booking wizard — payment processing dialog (blocking, no close button)
-    await page.goto('http://localhost:5173/book/comprehensive-full-body-checkup', { waitUntil: 'networkidle2' })
+    await page.goto(`${BASE}/book/comprehensive-full-body-checkup`, { waitUntil: 'networkidle2' })
     await sleep(1100)
     const fill = async (sel, val) =>
       page.evaluate((s, v) => {
@@ -236,7 +240,7 @@ async function assertCentredWhileScrolled(page, name) {
     await sleep(3200)
 
     // 2. My Bookings — timeline dialog (desktop menu) / mobile card link
-    await page.goto('http://localhost:5173/my-bookings', { waitUntil: 'networkidle2' })
+    await page.goto(`${BASE}/my-bookings`, { waitUntil: 'networkidle2' })
     await sleep(1400)
     if (vw >= 1024) {
       const clickedTrigger = await realClick(page, () => [...document.querySelectorAll('button')].find((b) => (b.textContent || '').includes('More actions')))
@@ -269,7 +273,7 @@ async function assertCentredWhileScrolled(page, name) {
       log(`${vw}px MyBookings: Escape closes timeline`, await page.evaluate(() => !document.querySelector('[role="dialog"]')))
     } else {
       // mobile: filter sheet + a booking link
-      await page.goto('http://localhost:5173/packages', { waitUntil: 'networkidle2' })
+      await page.goto(`${BASE}/packages`, { waitUntil: 'networkidle2' })
       await sleep(1300)
       const sheetTriggered = await page.evaluate(CLICK('Filters'))
       await sleep(700)
@@ -307,7 +311,7 @@ async function assertCentredWhileScrolled(page, name) {
 
   /* --------------------------------------------------------------------- admin side */
   await page.setViewport({ width: 1440, height: 900 })
-  await page.goto('http://localhost:5173/admin/login', { waitUntil: 'networkidle2' })
+  await page.goto(`${BASE}/admin/login`, { waitUntil: 'networkidle2' })
   await sleep(900)
   await page.evaluate(CLICK('Fill these credentials'))
   await sleep(300)
@@ -319,7 +323,7 @@ async function assertCentredWhileScrolled(page, name) {
 
     // admin mobile nav drawer (Sheet)
     if (vw < 1024) {
-      await page.goto('http://localhost:5173/admin/dashboard', { waitUntil: 'networkidle2' })
+      await page.goto(`${BASE}/admin/dashboard`, { waitUntil: 'networkidle2' })
       await sleep(1200)
       await page.evaluate(CLICK_LABEL('Open admin menu'))
       await sleep(700)
@@ -341,7 +345,7 @@ async function assertCentredWhileScrolled(page, name) {
     }
 
     // admin booking detail dialog (large, tall content) + status alert dialog
-    await page.goto('http://localhost:5173/admin/bookings', { waitUntil: 'networkidle2' })
+    await page.goto(`${BASE}/admin/bookings`, { waitUntil: 'networkidle2' })
     await sleep(1400)
     await openAndAssert(page, `${vw}px AdminBookings: detail dialog`, `(() => {
       const b = [...document.querySelectorAll('button')].find((x) => (x.textContent || '').trim() === 'Open')
@@ -355,7 +359,7 @@ async function assertCentredWhileScrolled(page, name) {
     await sleep(500)
 
     // admin packages: edit dialog (long form) + delete confirmation
-    await page.goto('http://localhost:5173/admin/packages', { waitUntil: 'networkidle2' })
+    await page.goto(`${BASE}/admin/packages`, { waitUntil: 'networkidle2' })
     await sleep(1300)
     await openAndAssert(page, `${vw}px AdminPackages: edit dialog`, `(() => {
       const b = [...document.querySelectorAll('button')].find((x) => (x.getAttribute('aria-label') || '').toLowerCase().includes('edit'))
@@ -387,7 +391,7 @@ async function assertCentredWhileScrolled(page, name) {
     await sleep(500)
 
     // admin customers: detail dialog
-    await page.goto('http://localhost:5173/admin/customers', { waitUntil: 'networkidle2' })
+    await page.goto(`${BASE}/admin/customers`, { waitUntil: 'networkidle2' })
     await sleep(1300)
     await openAndAssert(page, `${vw}px AdminCustomers: detail dialog`, `(() => {
       const b = [...document.querySelectorAll('button')].find((x) => (x.textContent || '').trim() === 'View')
@@ -402,7 +406,7 @@ async function assertCentredWhileScrolled(page, name) {
 
   /* ------------------------------------------- very small viewport (tiny height) */
   await page.setViewport({ width: 320, height: 480 })
-  await page.goto('http://localhost:5173/admin/bookings', { waitUntil: 'networkidle2' })
+  await page.goto(`${BASE}/admin/bookings`, { waitUntil: 'networkidle2' })
   await sleep(1500)
   const ok = await openAndAssert(page, '320x480 AdminBookings: detail dialog', `(() => {
     const b = [...document.querySelectorAll('button')].find((x) => (x.textContent || '').trim() === 'Open')

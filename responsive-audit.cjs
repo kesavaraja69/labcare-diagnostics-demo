@@ -3,6 +3,9 @@ const path = require('path')
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 // Relative to this script, so the audit works on any machine.
 const OUT = path.join(__dirname, 'screenshots')
+// Target server. Defaults to the Vite dev server; override it to test another
+// build, e.g. the Docker container:  BASE_URL=http://localhost:8090 node responsive-audit.cjs
+const BASE = (process.env.BASE_URL || 'http://localhost:5173').replace(/\/+$/, '')
 const results = []
 const log = (n, ok, x='') => { results.push({n, ok}); console.log(`${ok?'PASS':'FAIL'}  ${n}${x?` — ${x}`:''}`) }
 
@@ -20,7 +23,7 @@ const ROUTES = ['/', '/packages', '/packages/diabetes-care-package', '/my-bookin
     await page.setViewport({ width: w, height: 900 })
     let worst = null
     for (const r of ROUTES) {
-      await page.goto('http://localhost:5173'+r, { waitUntil: 'networkidle2' })
+      await page.goto(`${BASE}`+r, { waitUntil: 'networkidle2' })
       await sleep(900)
       const m = await page.evaluate(() => ({
         over: document.documentElement.scrollWidth - window.innerWidth,
@@ -38,7 +41,7 @@ const ROUTES = ['/', '/packages', '/packages/diabetes-care-package', '/my-bookin
 
   // signed-in admin routes at 1024 and 1440
   await page.setViewport({ width: 1440, height: 900 })
-  await page.goto('http://localhost:5173/admin/login', { waitUntil: 'networkidle2' }); await sleep(800)
+  await page.goto(`${BASE}/admin/login`, { waitUntil: 'networkidle2' }); await sleep(800)
   await page.evaluate(() => [...document.querySelectorAll('button')].find(x=>x.textContent.includes('Fill these credentials'))?.click())
   await sleep(300)
   await page.evaluate(() => [...document.querySelectorAll('button')].find(x=>x.textContent.includes('Sign in to admin console'))?.click())
@@ -47,7 +50,7 @@ const ROUTES = ['/', '/packages', '/packages/diabetes-care-package', '/my-bookin
     await page.setViewport({ width: w, height: 900 })
     let bad = null
     for (const r of ['/admin/dashboard','/admin/bookings','/admin/packages','/admin/customers','/admin/reports']) {
-      await page.goto('http://localhost:5173'+r, { waitUntil: 'networkidle2' }); await sleep(1000)
+      await page.goto(`${BASE}`+r, { waitUntil: 'networkidle2' }); await sleep(1000)
       const over = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
       if (over > 2) bad = { r, over }
     }
@@ -56,13 +59,13 @@ const ROUTES = ['/', '/packages', '/packages/diabetes-care-package', '/my-bookin
 
   // Deep-link + back-button sanity
   await page.setViewport({ width: 1440, height: 900 })
-  await page.goto('http://localhost:5173/packages', { waitUntil: 'networkidle2' }); await sleep(900)
-  await page.goto('http://localhost:5173/packages/diabetes-care-package', { waitUntil: 'networkidle2' }); await sleep(800)
+  await page.goto(`${BASE}/packages`, { waitUntil: 'networkidle2' }); await sleep(900)
+  await page.goto(`${BASE}/packages/diabetes-care-package`, { waitUntil: 'networkidle2' }); await sleep(800)
   await page.goBack(); await sleep(900)
   log('Browser back returns to catalogue', (await page.evaluate(()=>location.pathname)) === '/packages')
 
   // localStorage persistence check
-  await page.goto('http://localhost:5173/my-bookings', { waitUntil: 'networkidle2' }); await sleep(1000)
+  await page.goto(`${BASE}/my-bookings`, { waitUntil: 'networkidle2' }); await sleep(1000)
   const before = await page.evaluate(() => document.body.innerText.match(/LAB-2026-\d+/g)?.length || 0)
   await page.reload({ waitUntil: 'networkidle2' }); await sleep(1200)
   const after = await page.evaluate(() => document.body.innerText.match(/LAB-2026-\d+/g)?.length || 0)

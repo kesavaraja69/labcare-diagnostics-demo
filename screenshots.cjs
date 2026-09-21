@@ -4,6 +4,9 @@ const path = require('path')
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 // Relative to this script, so screenshots land in the project on any machine.
 const OUT = path.join(__dirname, 'screenshots')
+// Target server. Defaults to the Vite dev server; override it to capture another
+// build, e.g. the Docker container:  BASE_URL=http://localhost:8090 node screenshots.cjs
+const BASE = (process.env.BASE_URL || 'http://localhost:5173').replace(/\/+$/, '')
 
 ;(async () => {
   fs.mkdirSync(OUT, { recursive: true })
@@ -12,7 +15,7 @@ const OUT = path.join(__dirname, 'screenshots')
 
   const shot = async (name, path, { width = 1440, height = 1000, full = true, wait = 1200, pre } = {}) => {
     await page.setViewport({ width, height })
-    await page.goto(`http://localhost:5173${path}`, { waitUntil: 'networkidle2' })
+    await page.goto(`${BASE}${path}`, { waitUntil: 'networkidle2' })
     await sleep(wait)
     if (pre) await pre()
     await page.screenshot({ path: `${OUT}/${name}.png`, fullPage: full })
@@ -51,7 +54,7 @@ const OUT = path.join(__dirname, 'screenshots')
 
   // Admin screens with a signed-in session
   await page.setViewport({ width: 1440, height: 1000 })
-  await page.goto('http://localhost:5173/admin/login', { waitUntil: 'networkidle2' })
+  await page.goto(`${BASE}/admin/login`, { waitUntil: 'networkidle2' })
   await sleep(900)
   await page.evaluate(() => {
     const b = [...document.querySelectorAll('button')].find((x) => x.textContent.includes('Fill these credentials'))

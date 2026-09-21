@@ -5,7 +5,9 @@
  */
 const puppeteer = require('puppeteer')
 
-const BASE = 'http://localhost:5173'
+// Target server. Defaults to the Vite dev server; override it to test another
+// build, e.g. the Docker container:  BASE_URL=http://localhost:8090 node e2e-test.cjs
+const BASE = (process.env.BASE_URL || 'http://localhost:5173').replace(/\/+$/, '')
 const results = []
 const consoleErrors = []
 const pageErrors = []
